@@ -1,13 +1,62 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.24...3.30)
+project(czerny-turner-visualizer)
 
-project(czerny_turner_visualizer)
+include(FetchContent)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules" ${CMAKE_MODULE_PATH})
+set(CMAKE_C_COMPILER "C:/mingw64/bin/gcc.exe")
+set(CMAKE_CXX_COMPILER "C:/mingw64/bin/g++.exe")
 
-add_subdirectory(corrade EXCLUDE_FROM_ALL)
+# Generate compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-list(APPEND CMAKE_PREFIX_PATH "C:/Users/Jesse Deuel/Documents/GitHub/Misc/SDL2-2.30.9")
-set(MAGNUM_WITH_SDL2APPLICATION ON CACHE BOOL "" FORCE)
-add_subdirectory(magnum EXCLUDE_FROM_ALL)
+# Dependencies
+set(RAYLIB_VERSION 5.0)
 
+FetchContent_Declare(
+    raylib
+    DOWNLOAD_EXTRACT_TIMESTAMP OFF
+    URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
+    FIND_PACKAGE_ARGS
+)
+
+FetchContent_MakeAvailable(raylib)
+
+# Our Project
+add_executable(${PROJECT_NAME})
 add_subdirectory(src)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+if ("${PLATFORM}" STREQUAL "Web")
+    add_custom_command(
+        TARGET ${PROJECT_NAME} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/resources $<TARGET_FILE_DIR:${PROJECT_NAME}>/../resources
+    )
+    #DEPENDS ${PROJECT_NAME}
+else()
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/resources $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+    )
+    #DEPENDS ${PROJECT_NAME}
+endif()
+
+#set(raylib_VERBOSE 1)
+target_link_libraries(${PROJECT_NAME} raylib)
+
+# Web Configurations
+if ("${PLATFORM}" STREQUAL "Web")
+    # Tell Emscripten to build an example.html file.
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+    target_link_options(${PROJECT_NAME} PUBLIC -sUSE_GLFW=3 PUBLIC --preload-file resources)
+endif()
+
+# Checks if OSX and links appropriate frameworks (Only required on MacOS)
+if (APPLE)
+    target_link_libraries(${PROJECT_NAME} "-framework IOKit")
+    target_link_libraries(${PROJECT_NAME} "-framework Cocoa")
+    target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
+endif()
