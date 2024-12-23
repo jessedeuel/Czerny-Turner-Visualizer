@@ -8,12 +8,13 @@ public:
 
     int open_serial();
     int setup_serial();
+    int read_bytes(char* buf, int num_bytes);
 
     void set_port(const char * port);
 
 private:
     const char* port;
-    handle_t hSerial;
+    void* hSerial;
 };
 
 #endif
