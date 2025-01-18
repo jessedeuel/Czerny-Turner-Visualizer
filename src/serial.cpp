@@ -1,5 +1,6 @@
 #include <windows.h>
 #include "serial.h"
+#include <iostream>
 
 void serial_port::set_port(const char * port)
 {
@@ -9,10 +10,13 @@ void serial_port::set_port(const char * port)
 int serial_port::open_serial()
 {
     if (port == "" || port == "\0")
+    {
+        std::printf("Invalid port");
         return 1;
+    }
 
     hSerial = CreateFile(reinterpret_cast<LPCSTR>(port), GENERIC_READ | GENERIC_WRITE, 0,
-                        0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+                        NULL, OPEN_EXISTING, 0, NULL);
 
     if (hSerial == INVALID_HANDLE_VALUE)
     {

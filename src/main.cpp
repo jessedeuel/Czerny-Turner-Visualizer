@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include <iostream>
 #include "serial.h"
+#include <array>
 
 #define MAX_INPUT_CHARS 100
 
@@ -15,6 +16,8 @@ int main()
     int letterCount = 0;
     serial_port serial(port);
     bool validPort = false;
+
+    std::array<float, 4> encoder_vals{0, 0, 0, 0};
 
     Rectangle textBox = { 100.0, 15.0, 255, 50 };
     bool mouseOnText = false;
@@ -62,7 +65,7 @@ int main()
             {
                 serial.set_port(port);
 
-                if (serial.open_serial() == 0)
+                if (serial.open_serial() == 0 && letterCount > 0)
                 {
                     std::printf("Found %s.\n", port);
                     validPort = true;
@@ -94,19 +97,43 @@ int main()
 
         if (validPort)
         {
-            const int bytes_to_read = 12;
-            char buff[bytes_to_read + 1] = {0};
-            int ret = serial.read_bytes(buff, bytes_to_read);
+            char num_buf[1] = {0};
+            char val_buf[10] = {0};
+            int ret = serial.read_bytes(num_buf, 1);
 
             if (ret == 0)
             {
-                std::cout << "Read " << bytes_to_read << " bytes: ";
-
-                for (char i : buff)
+                if (num_buf[0] == '$')
                 {
-                    std::cout << i;
+                    serial.read_bytes(num_buf, 1);
+
+                    int encoder_number = (int)(num_buf[0] - '0');
+                    std::string str_encoder_value = "";
+
+                    //std::cout << "Encoder " << encoder_number << " value: ";
+
+                    serial.read_bytes(num_buf, 1);
+
+                    if (num_buf[0] == '_')
+                    {
+                        serial.read_bytes(val_buf, 7);
+
+                        for (const auto &c : val_buf)
+                        {
+                            str_encoder_value.push_back(c);
+                        }
+
+                        
+                        //std::cout << std::stof(str_encoder_value);
+                        
+                        encoder_vals[encoder_number-1] = std::stof(str_encoder_value);
+                    }
+
+                    //std::printf("Encoder %i value: %s\n", encoder_number, str_encoder_value);
+                    //std::cout << std::endl;
                 }
-                std::cout << std::endl;
+                else
+                    ret = serial.read_bytes(num_buf, 1);
             }
             else
                 std::cout << "Error reading data." << std::endl;
@@ -130,6 +157,15 @@ int main()
             if (validPort)
             {
                 DrawTextEx(aptos, port, (Vector2){ (float)textBox.x + 5, (float)textBox.y + 8}, aptos.baseSize, 2, DARKGREEN);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    std::string s = "Encoder ";
+                    s.append(std::to_string(i+1));
+                    s.append(": ");
+                    s.append(std::to_string(encoder_vals[i]));
+                    DrawTextEx(aptos, s.c_str(), (Vector2){ 20.0, (float)textBox.y + (60 *(i+1))}, aptos.baseSize, 2, DARKGRAY);
+                }
             }
             else
             {
