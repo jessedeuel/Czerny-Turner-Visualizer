@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.24...3.30)
-project(czerny-turner-visualizer)
+project(czerny_turner_visualizer)
 
 include(FetchContent)
 
-set(CMAKE_C_COMPILER "C:/mingw64/bin/gcc.exe")
-set(CMAKE_CXX_COMPILER "C:/mingw64/bin/g++.exe")
+#set(CMAKE_C_COMPILER "C:/msys64/ucrt64/bin/gcc.exe")
+#set(CMAKE_CXX_COMPILER "C:/msys64/ucrt64/bin/g++.exe")
+
+#set(CMAKE_MAKE_PROGRAM Ninja)
 
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -60,3 +62,5 @@ if (APPLE)
     target_link_libraries(${PROJECT_NAME} "-framework Cocoa")
     target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
 endif()
+
+file(COPY "./resources" DESTINATION ".")
